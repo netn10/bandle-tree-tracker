@@ -1,0 +1,52 @@
+<html>
+
+<head>
+    <style>
+        body{ background-color:black; color:white}
+        
+    </style>
+</head>
+
+<body>
+    <center>
+        <h1>
+            Bundle Tree Tracker
+        </h1>
+    </center>
+    <h1>
+        Played
+    </h1>
+    <div id="played">
+
+    </div>
+</center>
+<h1>
+    Not Played
+</h1>
+    <div id="not_played">
+
+    </div>
+
+    <script>
+        setInterval(function(){
+            $.ajax({
+          url: "http://127.0.0.1:5000/get_from_flask_from_riot",
+          success: function (data){
+            console.log(data);
+            $("div").empty()
+            for (region of data["played"])
+            {
+                $("#played").append(`<img id=${region} style="width=50px;height:50px" src=static/icon-${region}.png />`);
+            }
+            for (region of data["not played"])
+            {
+                $("#not_played").append(`<img id=${region} style="width=50px;height:50px" src=static/icon-${region}.png />`);
+            }
+          }
+        })
+        }, 4000);
+
+    </script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</body>
+</html>
