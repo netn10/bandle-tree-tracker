@@ -20,6 +20,14 @@ ids_to_region = {
     "SH" : "shurima"
     }
 
+# Old legends from Bandlecity are written as the other region
+special_cards = {
+    "02BW046" : "bilgewater", # Fizz
+    "01PZ008" : "piltoverzaun", # Teemo
+    "01PZ056" : "piltoverzaun", # Heimerdinger
+    "03IO002" : "ionia" # Lulu
+}
+
 def get_region_by_id(id):
     # Because two regional followers are always BC, we need to google them
     all_regions = []
@@ -43,7 +51,7 @@ def get_region_by_id(id):
                         continue
     if "bandlecity" in all_regions:
         all_regions.remove("bandlecity")
-    print(all_regions)
+    print("all_regions found: " + str(all_regions))
     try:
         all_regions = all_regions[0]
         return all_regions
@@ -70,40 +78,35 @@ def get_from_flask_from_riot():
         print("In a game!")
         print(all_data["Rectangles"])
         for card in all_data["Rectangles"]:
-            region_of_card = ""
+            two_letters_of_region = ""
+            full_name_of_region = ""
             card_id = card['CardCode']
             for key in ids_to_region:
                 if key in card_id:
-                    region_of_card = key
+                    two_letters_of_region = key
+                    full_name_of_region = ids_to_region[two_letters_of_region]
 
-            if card["TopLeftY"] == 260 or card["TopLeftY"] == 450 or card["TopLeftY"] == 284 and region_of_card not in all_played_regions:
-                card_id = card['CardCode']
+            if card["TopLeftY"] == 260 or card["TopLeftY"] == 450 or card["TopLeftY"] == 284 and full_name_of_region in all_not_played_regions:
                 print(f"You played: {card_id}")
-                if ids_to_region[region_of_card] not in all_played_regions or region_of_card == "BC":
+                if two_letters_of_region == "BC" or card['CardCode'] in special_cards:
                     # Bandle City is special - we need to check for duel
-                    regions_of_played_follower = ids_to_region[region_of_card]
-                    if region_of_card != "BC":
-                        all_played_regions.append(regions_of_played_follower)
-                        try:
-                            all_not_played_regions.remove(regions_of_played_follower)
-                        except:
-                            continue
-                    else:
-                        # The region_of_card is BC - we need the other region
-                        regions_of_played_follower = get_region_by_id(card_id)
-                        all_played_regions.append(regions_of_played_follower)
-                        try:
-                            all_not_played_regions.remove(regions_of_played_follower)
-                        except:
-                            continue
-                        if "bandlecity" not in all_played_regions:
-                            all_played_regions.append("bandlecity")
-                        if "bandlecity" in all_not_played_regions:
-                            try:
-                                all_not_played_regions.remove("bandlecity")
-                            except:
-                                continue
-        print(all_played_regions)
+                    all_played_regions.append("bandlecity")
+                    try:
+                        all_not_played_regions.remove("bandlecity")
+                    except:
+                        continue
+                    all_played_regions.append(get_region_by_id(card_id))
+                    try:
+                        all_not_played_regions.remove(get_region_by_id(card_id))
+                    except:
+                        continue
+                if two_letters_of_region != "BC":
+                    # Easy - just add to all all_played_regions and remove from all_not_played_regions
+                    all_played_regions.append(full_name_of_region)
+                    try:
+                        all_not_played_regions.remove(full_name_of_region)
+                    except:
+                        continue
         all_played_regions = list(dict.fromkeys(all_played_regions))
         if None in all_played_regions:
             all_played_regions.remove(None)
