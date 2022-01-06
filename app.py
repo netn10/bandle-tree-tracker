@@ -3,7 +3,6 @@ import requests
 from flask_cors import CORS
 from bs4 import BeautifulSoup
 import re
-import os
 
 app = Flask(__name__)
 CORS(app)
@@ -63,48 +62,55 @@ def hello():
 def get_from_flask_from_riot():
     global all_played_regions
     global all_not_played_regions
-    all_data = requests.get('http://127.0.0.1:21337/positional-rectangles').json()
+    try:
+        all_data = requests.get('http://127.0.0.1:21337/positional-rectangles').json()
+    except:
+        return "Please log into Legends of Runterra"
     if all_data["GameState"] == "InProgress":
         print("In a game!")
         print(all_data["Rectangles"])
-        row = 0
         for card in all_data["Rectangles"]:
-            row = row + 1
-            if card["TopLeftY"] == 260 or card["TopLeftY"] == 450 or card["TopLeftY"] == 284:
+            region_of_card = ""
+            card_id = card['CardCode']
+            for key in ids_to_region:
+                if key in card_id:
+                    region_of_card = key
+
+            if card["TopLeftY"] == 260 or card["TopLeftY"] == 450 or card["TopLeftY"] == 284 and region_of_card not in all_played_regions:
                 card_id = card['CardCode']
                 print(f"You played: {card_id}")
-                for key in ids_to_region:
-                    if key in card_id:
-                        if ids_to_region[key] not in all_played_regions or key == "BC":
-                            # Bandle City is special - we need to check for duel
-                            regions_of_played_follower = ids_to_region[key]
-                            if key != "BC":
-                                all_played_regions.append(regions_of_played_follower)
-                                try:
-                                    all_not_played_regions.remove(regions_of_played_follower)
-                                except:
-                                    continue
-                            else:
-                                # The key is BC - we need the other region
-                                regions_of_played_follower = get_region_by_id(card_id)
-                                all_played_regions.append(regions_of_played_follower)
-                                try:
-                                    all_not_played_regions.remove(regions_of_played_follower)
-                                except:
-                                    continue
-                                if "bandlecity" not in all_played_regions:
-                                    all_played_regions.append("bandlecity")
-                                if "bandlecity" in all_not_played_regions:
-                                    try:
-                                        all_not_played_regions.remove("bandlecity")
-                                    except:
-                                        continue
+                if ids_to_region[region_of_card] not in all_played_regions or region_of_card == "BC":
+                    # Bandle City is special - we need to check for duel
+                    regions_of_played_follower = ids_to_region[region_of_card]
+                    if region_of_card != "BC":
+                        all_played_regions.append(regions_of_played_follower)
+                        try:
+                            all_not_played_regions.remove(regions_of_played_follower)
+                        except:
+                            continue
+                    else:
+                        # The region_of_card is BC - we need the other region
+                        regions_of_played_follower = get_region_by_id(card_id)
+                        all_played_regions.append(regions_of_played_follower)
+                        try:
+                            all_not_played_regions.remove(regions_of_played_follower)
+                        except:
+                            continue
+                        if "bandlecity" not in all_played_regions:
+                            all_played_regions.append("bandlecity")
+                        if "bandlecity" in all_not_played_regions:
+                            try:
+                                all_not_played_regions.remove("bandlecity")
+                            except:
+                                continue
         print(all_played_regions)
         all_played_regions = list(dict.fromkeys(all_played_regions))
         if None in all_played_regions:
             all_played_regions.remove(None)
         return {"played" : all_played_regions, "not played" : all_not_played_regions}
     else:
+        all_played_regions = []
+        all_not_played_regions = ["targon", "bandlecity","demacia","freljord","ionia","noxus","piltoverzaun","bilgewater","shadowisles", "shurima"]
         return "Please enter a game"
 
 if __name__ == '__main__':
